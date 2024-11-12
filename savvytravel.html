@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Savvy Travel Buddy</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: url('file:///C:/Users/Nishkala/Desktop/Mini project final/loc.jpg') no-repeat center center fixed;
+            background-size: cover;
+            color: black;
+        }
+        h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+        p {
+            font-size: 1.5em;
+            text-align: center;
+            max-width: 600px;
+        }
+        .button-container {
+            position: absolute;
+            bottom: 20px;
+        }
+        button {
+            font-size: 1.5em;
+            padding: 10px 20px;
+            background-color:#87CEEB;
+            color: black;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>Savvy Travel Buddy</h1>
+    <p>Welcome to Savvy Travel Buddy! Your go-to web application for finding and comparing nearby malls. Whether you're looking for the best shopping experience we've got you covered. Explore and enjoy a seamless and personalized journey with us!</p>
+    <div class="button-container">
+        <button onclick="redirect()">Start</button>
+    </div>
+
+    <script>
+        function redirect() {
+            window.location.href = 'file:///C:/Users/Nishkala/Desktop/Mini project final/savvy.html';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>savvy ttravel buddy</title>
+        <style>
+            /*body {
+                font-family: Arial, sans-serif;
+                padding: 20px;
+                margin: 0;
+                box-sizing: border-box;
+            }*/
+	    body {
+      margin: 0; /* Remove default margin to eliminate gray box */
+      font-family: sans-serif;
+      background-image: url("C:/Users/Nishkala/Desktop/Mini project final/savvy.jpg"); /* Replace with your image path */
+      background-repeat: no-repeat;
+      background-position: center;
+      background-attachment: fixed; /* Fix the background image to the viewport */
+      background-size: cover; /* Ensure image fits within viewport without distortion */
+      /* Add a dark overlay on top of the background image */
+      position: relative;
+      text-align: center; /* Center align all content within body */
+    }
+
+            .bold {
+                font-weight: bold;
+            }
+            .mall-item {
+                margin-bottom: 10px;
+            }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 20px;
+            }
+            th, td {
+                border: 1px solid #ddd;
+                padding: 8px;
+                text-align: left;
+            }
+            th {
+                background-color: #f2f2f2;
+            }
+            img {
+                max-width: 100px;
+                max-height: 100px;
+            }
+            @media (max-width: 768px) {
+                table, th, td {
+                    display: block;
+                    width: 100%;
+                }
+                th, td {
+                    box-sizing: border-box;
+                    width: 100%;
+                }
+                th {
+                    background-color: transparent;
+                    color: #000;
+                    font-weight: bold;
+                }
+                th, td {
+                    padding: 10px;
+                    border: none;
+                    border-bottom: 1px solid #ddd;
+                }
+            }
+            @media (max-width: 480px) {
+                .mall-item {
+                    font-size: 14px;
+                }
+                button {
+                    padding: 10px;
+                    font-size: 16px;
+                }
+                select {
+                    margin-bottom: 10px;
+                    width: 100%;
+                    padding: 10px;
+                    font-size: 16px;
+                }
+            }
+        </style>
+    </head>
+<body>
+    <h1>Savvy Travel Buddy</h1>
+    
+    <div id="results"></div>
+
+    <h2>Compare Malls</h2>
+    <select id="mall1">
+        <option value="">Select Mall 1</option>
+    </select>
+    <select id="mall2">
+        <option value="">Select Mall 2</option>
+    </select>
+    <button onclick="compareMalls()">Compare</button>
+
+    <div id="comparisonResults"></div>
+
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAu2gS7bkF7aCVt1QlbeuiDZjeCeaA1A2k&libraries=places"></script>
+    <script>
+        let userLocation;
+        let malls = {};
+
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(showPosition);
+            } else {
+                alert("Geolocation is not supported by this browser.");
+            }
+        }
+
+        function showPosition(position) {
+            userLocation = {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude
+            };
+            fetchNearbyPlaces();
+        }
+
+        function fetchNearbyPlaces() {
+            const service = new google.maps.places.PlacesService(document.createElement('div'));
+            service.nearbySearch({
+                location: userLocation,
+                radius: 5000,  // Change this value to adjust the radius
+                type: ['shopping_mall']
+            }, handleNearbyPlaces);
+        }
+
+        function handleNearbyPlaces(results, status) {
+            if (status === google.maps.places.PlacesServiceStatus.OK) {
+                let resultsDiv = document.getElementById('results');
+                resultsDiv.innerHTML = '';
+                let destinations = [];
+                console.log('Nearby places results:', results);
+                results.forEach(place => {
+                    malls[place.place_id] = place;
+                    destinations.push(place.geometry.location);
+                });
+                fetchDistances(destinations, results);
+            }
+        }
+
+        function fetchDistances(destinations, results) {
+            let service = new google.maps.DistanceMatrixService();
+            service.getDistanceMatrix({
+                origins: [userLocation],
+                destinations: destinations,
+                travelMode: 'DRIVING'
+            }, function(response, status) {
+                if (status === 'OK') {
+                    let resultsDiv = document.getElementById('results');
+                    response.rows[0].elements.forEach((element, index) => {
+                        let distance = element.distance.text;
+                        let duration = element.duration.text;
+                        let place = results[index];
+                        resultsDiv.innerHTML += `
+                            <div class="mall-item">
+                                <span class="bold">${place.name}</span> - ${place.vicinity}
+                                <br>Distance: ${distance}
+                                <br>Duration: ${duration}
+                            </div>`;
+                        let option1 = document.createElement('option');
+                        option1.value = place.place_id;
+                        option1.text = place.name;
+                        document.getElementById('mall1').appendChild(option1);
+                        let option2 = document.createElement('option');
+                        option2.value = place.place_id;
+                        option2.text = place.name;
+                        document.getElementById('mall2').appendChild(option2);
+                    });
+                }
+            });
+        }
+
+        function fetchPlaceDetails(placeId) {
+            return new Promise((resolve, reject) => {
+                let request = {
+                    placeId: placeId,
+                    fields: ['name', 'rating', 'formatted_address', 'types', 'photos', 'opening_hours', 'geometry','reviews','price_level','formatted_phone_number', 'website']
+                };
+
+                let service = new google.maps.places.PlacesService(document.createElement('div'));
+                service.getDetails(request, function(place, status) {
+                    if (status === google.maps.places.PlacesServiceStatus.OK) {
+                        console.log('Place details:', place);
+                        resolve(place);
+                    } else {
+                        reject(status);
+                    }
+                });
+            });
+        }
+
+        function compareMalls() {
+            let mall1Id = document.getElementById('mall1').value;
+            let mall2Id = document.getElementById('mall2').value;
+
+            if (!mall1Id || !mall2Id) {
+                alert('Please select both malls to compare');
+                return;
+            }
+
+            Promise.all([fetchPlaceDetails(mall1Id), fetchPlaceDetails(mall2Id)])
+                .then(([mall1Details, mall2Details]) => {
+                    displayComparisonTable(mall1Details, mall2Details);
+                })
+                .catch(error => {
+                    console.error('Error fetching place details:', error);
+                });
+        }
+
+        function displayComparisonTable(mall1, mall2) {
+            let comparisonResults = document.getElementById('comparisonResults');
+            comparisonResults.innerHTML = `
+                <h3>Comparison: ${mall1.name} vs ${mall2.name}</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Feature</th>
+                            <th>${mall1.name}</th>
+                            <th>${mall2.name}</th>
+                        </tr>
+                    </thead>
+                    <tbody id="comparison-body">
+                        <tr>
+                            <td>Address</td>
+                            <td>${mall1.formatted_address}</td>
+                            <td>${mall2.formatted_address}</td>
+                        </tr>
+                        <tr>
+                            <td>Rating</td>
+                            <td>${mall1.rating || 'N/A'}</td>
+                            <td>${mall2.rating || 'N/A'}</td>
+                        </tr>
+                        <tr>
+                            <td>Types</td>
+                            <td>${mall1.types ? mall1.types.join(', ') : 'N/A'}</td>
+                            <td>${mall2.types ? mall2.types.join(', ') : 'N/A'}</td>
+                        </tr>
+                        <tr>
+                            <td>Photos</td>
+                            <td>${mall1.photos && mall1.photos.length > 0 ? `<img src="${mall1.photos[0].getUrl({ maxWidth: 100, maxHeight: 100 })}" alt="${mall1.name}">` : 'No photo available'}</td>
+                            <td>${mall2.photos && mall2.photos.length > 0 ? `<img src="${mall2.photos[0].getUrl({ maxWidth: 100, maxHeight: 100 })}" alt="${mall2.name}">` : 'No photo available'}</td>
+                        </tr>
+                        <tr>
+                            <td>Opening Hours</td>
+                            <td>${mall1.opening_hours && mall1.opening_hours.weekday_text ? mall1.opening_hours.weekday_text.join(', ') : 'N/A'}</td>
+                            <td>${mall2.opening_hours && mall2.opening_hours.weekday_text ? mall2.opening_hours.weekday_text.join(', ') : 'N/A'}</td>
+                        </tr>
+                        <tr>
+                            <td>Latitude</td>
+                            <td>${mall1.geometry && mall1.geometry.location ? mall1.geometry.location.lat().toFixed(5) : 'N/A'}</td>
+                            <td>${mall2.geometry && mall2.geometry.location ? mall2.geometry.location.lat().toFixed(5) : 'N/A'}</td>
+                        </tr>
+                        <tr>
+                            <td>Longitude</td>
+                            <td>${mall1.geometry && mall1.geometry.location ? mall1.geometry.location.lng().toFixed(5) : 'N/A'}</td>
+                            <td>${mall2.geometry && mall2.geometry.location ? mall2.geometry.location.lng().toFixed(5) : 'N/A'}</td>
+                        </tr>
+                        <tr>
+                    <td>User Reviews</td>
+                    <td>${mall1.reviews && mall1.reviews.length > 0 ? mall1.reviews.map(review => `<p>${review.text}</p>`).join('') : 'No reviews available'}</td>
+                    <td>${mall2.reviews && mall2.reviews.length > 0 ? mall2.reviews.map(review => `<p>${review.text}</p>`).join('') : 'No reviews available'}</td>
+                </tr>
+                <tr>
+                    <td>Price Level</td>
+                    <td>${mall1.price_level || 'N/A'}</td>
+                    <td>${mall2.price_level || 'N/A'}</td>
+                </tr>
+                <tr>
+                    <td>Phone Number</td>
+                    <td>${mall1.formatted_phone_number || 'N/A'}</td>
+                    <td>${mall2.formatted_phone_number || 'N/A'}</td>
+                </tr>
+                <tr>
+                    <td>Website</td>
+                    <td>${mall1.website ? `<a href="${mall1.website}" target="_blank">Visit Website</a>` : 'N/A'}</td>
+                    <td>${mall2.website ? `<a href="${mall2.website}" target="_blank">Visit Website</a>` : 'N/A'}</td>
+                </tr>
+                    </tbody>
+                </table>
+            `;
+        }
+
+        // Initial function call to get location
+        getLocation();
+    </script>
+</body>
+</html>
